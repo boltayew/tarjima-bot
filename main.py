@@ -1,3 +1,11 @@
+import sys
+# Python 3.13+ dagi cgi xatosini oldini olish uchun
+try:
+    import cgi
+except ImportError:
+    import types
+    sys.modules['cgi'] = types.ModuleType('cgi')
+
 import telebot
 from googletrans import Translator
 import os
@@ -25,7 +33,6 @@ def send_welcome(message):
 @bot.message_handler(func=lambda message: True)
 def translate_text(message):
     try:
-        # Tilni avtomatik aniqlash va tarjima qilish
         translation = translator.translate(message.text, dest='uz')
         source_lang = translation.src.upper()
         
@@ -40,7 +47,5 @@ def run_server():
     server.run(host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
-    # Serverni alohida oqimda ishga tushirish
     threading.Thread(target=run_server).start()
-    # Botni ishga tushirish
     bot.infinity_polling()
