@@ -1,24 +1,22 @@
 import telebot
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 import os
 
-# Render uchun token (Buni keyinroq Render sozlamalariga qo'shamiz)
-BOT_TOKEN = os.environ.get('BOT_TOKEN')
-
-bot = telebot.TeleBot(BOT_TOKEN)
-translator = Translator()
+# Tokenni Render-dagi Environment Variables-dan oladi
+TOKEN = os.getenv('BOT_TOKEN')
+bot = telebot.TeleBot(TOKEN)
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.reply_to(message, "Salom! Men 24/7 ishlovchi tarjimon botman. Menga matn yuboring, o'zbekchaga tarjima qilaman!")
+    bot.reply_to(message, "Salom! Men tarjimon botman. Menga inglizcha matn yuboring, men o'zbekchaga o'girib beraman.")
 
 @bot.message_handler(func=lambda message: True)
-def translate_msg(message):
+def translate_message(message):
     try:
-        # Kelgan matnni o'zbekchaga tarjima qilish
-        res = translator.translate(message.text, dest='uz')
-        bot.reply_to(message, res.text)
-    except:
-        bot.reply_to(message, "Kechirasiz, tarjimada xatolik bo'ldi.")
+        # Inglizchadan O'zbekchaga tarjima qilish
+        translated = GoogleTranslator(source='auto', target='uz').translate(message.text)
+        bot.reply_to(message, translated)
+    except Exception as e:
+        bot.reply_to(message, "Kechirasiz, tarjima qilishda xatolik yuz berdi.")
 
 bot.infinity_polling()
