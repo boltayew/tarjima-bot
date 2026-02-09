@@ -10,14 +10,13 @@ ADMIN_ID = 7066979613
 bot = telebot.TeleBot(TOKEN)
 translator = Translator()
 
-# Tillar lug'ati (To'liq nomlar uchun)
 LANGUAGES_DICT = {
     'en': 'English', 'ru': 'Russian', 'uz': 'Uzbek', 'tr': 'Turkish',
     'de': 'German', 'fr': 'French', 'es': 'Spanish', 'it': 'Italian',
     'ko': 'Korean', 'ja': 'Japanese', 'zh-cn': 'Chinese'
 }
 
-# --- BAZA BILAN ISHLASH ---
+# --- BAZA ---
 def db_init():
     conn = sqlite3.connect('lingo_users.db', check_same_thread=False)
     cursor = conn.cursor()
@@ -35,7 +34,6 @@ def add_user(user_id):
 db_init()
 
 # --- ADMIN PANEL ---
-
 @bot.message_handler(commands=['botusers'])
 def get_stats(message):
     if message.from_user.id == ADMIN_ID:
@@ -44,37 +42,13 @@ def get_stats(message):
         cursor.execute('SELECT COUNT(*) FROM users')
         count = cursor.fetchone()[0]
         conn.close()
-        bot.send_message(ADMIN_ID, f"📊 **Bot foydalanuvchilari:** {count} ta")
+        bot.send_message(ADMIN_ID, f"📊 *Bot foydalanuvchilari:* {count} ta", parse_mode='Markdown')
 
-@bot.message_handler(commands=['send'])
-def send_all_prompt(message):
-    if message.from_user.id == ADMIN_ID:
-        msg = bot.send_message(ADMIN_ID, "Barcha foydalanuvchilarga yuboriladigan xabarni kiriting:")
-        bot.register_next_step_handler(msg, broadcast_message)
-
-def broadcast_message(message):
-    conn = sqlite3.connect('lingo_users.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT user_id FROM users')
-    users = cursor.fetchall()
-    conn.close()
-    
-    success = 0
-    for user in users:
-        try:
-            bot.copy_message(user[0], message.chat.id, message.message_id)
-            success += 1
-        except:
-            continue
-    bot.send_message(ADMIN_ID, f"✅ Xabar {success} ta foydalanuvchiga yetib bordi.")
-
-# --- INLINE MODE (Inline foydalanilganda ham bazaga qo'shadi) ---
+# --- INLINE MODE ---
 @bot.inline_handler(lambda query: len(query.query) > 0)
 def inline_translation(inline_query):
     try:
-        # Foydalanuvchini bazaga qo'shish qatorini aynan shu yerga qo'shdik
-        add_user(inline_query.from_user.id) 
-        
+        add_user(inline_query.from_user.id)
         text = inline_query.query
         detection = translator.detect(text)
         detected_lang = detection.lang
@@ -83,40 +57,33 @@ def inline_translation(inline_query):
         
         lang_full = LANGUAGES_DICT.get(detected_lang, detected_lang.upper())
         
+        # Markdown formatini to'g'ri qo'llash
         result = types.InlineQueryResultArticle(
             id='1',
             title=f"Tarjima: {lang_full} -> {target.upper()}",
             description=translated.text,
             input_message_content=types.InputTextMessageContent(
-                f"📝 **Matn:** {text}\n✅ **Tarjima:** {translated.text}"
+                f"📝 *Matn:* {text}\n✅ *Tarjima:* {translated.text}",
+                parse_mode='Markdown'
             )
         )
         bot.answer_inline_query(inline_query.id, [result])
     except:
         pass
 
-# --- ASOSIY TARJIMA ---
-
+# --- ASOSIY ---
 @bot.message_handler(commands=['start'])
 def welcome(message):
     add_user(message.from_user.id)
     bot.reply_to(message, "Salom! Men Lingo uz tarjimon botiman.\n\n"
                           "🔹 Matn yuboring - tarjima qilaman.\n"
-                          "🔹 Har qanday guruh yoki chatda `@Lingouzbot` deb yozing - inline rejimda ishlayman.")
+                          "🔹 Inline rejimda ishlayman.")
 
 @bot.message_handler(func=lambda m: True)
 def main_translator(message):
-    # Bu yerda ham foydalangan odamni bazaga qo'shadi
     add_user(message.from_user.id)
     try:
         detection = translator.detect(message.text)
         detected_lang_code = detection.lang
         lang_name = LANGUAGES_DICT.get(detected_lang_code, detected_lang_code.upper())
-        target_lang = 'uz' if detected_lang_code != 'uz' else 'en'
-        translated = translator.translate(message.text, dest=target_lang)
-        
-        bot.reply_to(message, f"🔍 **Asl tili:** {lang_name}\n📝 **Tarjima:** {translated.text}")
-    except:
-        bot.reply_to(message, "Xatolik yuz berdi. Iltimos qaytadan urinib ko'ring.")
-
-bot.polling(none_stop=True)
+        target_lang = 'uz' if detected_lang_code !=
