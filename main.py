@@ -10,14 +10,14 @@ ADMIN_ID = 7066979613
 bot = telebot.TeleBot(TOKEN)
 translator = Translator()
 
-# Tillar lug'ati (Siz aytgandek to'liq nomlar chiqishi uchun)
+# Tillar lug'ati (To'liq nomlar uchun)
 LANGUAGES_DICT = {
     'en': 'English', 'ru': 'Russian', 'uz': 'Uzbek', 'tr': 'Turkish',
     'de': 'German', 'fr': 'French', 'es': 'Spanish', 'it': 'Italian',
     'ko': 'Korean', 'ja': 'Japanese', 'zh-cn': 'Chinese'
 }
 
-# --- MA'LUMOTLAR BAZASI (SQLite) ---
+# --- BAZA BILAN ISHLASH ---
 def db_init():
     conn = sqlite3.connect('lingo_users.db', check_same_thread=False)
     cursor = conn.cursor()
@@ -34,7 +34,7 @@ def add_user(user_id):
 
 db_init()
 
-# --- ADMIN BUYRUQLARI ---
+# --- ADMIN PANEL ---
 
 @bot.message_handler(commands=['botusers'])
 def get_stats(message):
@@ -68,10 +68,13 @@ def broadcast_message(message):
             continue
     bot.send_message(ADMIN_ID, f"✅ Xabar {success} ta foydalanuvchiga yetib bordi.")
 
-# --- INLINE MODE ---
+# --- INLINE MODE (Inline foydalanilganda ham bazaga qo'shadi) ---
 @bot.inline_handler(lambda query: len(query.query) > 0)
 def inline_translation(inline_query):
     try:
+        # Foydalanuvchini bazaga qo'shish qatorini aynan shu yerga qo'shdik
+        add_user(inline_query.from_user.id) 
+        
         text = inline_query.query
         detection = translator.detect(text)
         detected_lang = detection.lang
@@ -99,10 +102,11 @@ def welcome(message):
     add_user(message.from_user.id)
     bot.reply_to(message, "Salom! Men Lingo uz tarjimon botiman.\n\n"
                           "🔹 Matn yuboring - tarjima qilaman.\n"
-                          "🔹 Har qanday chatda `@Lingouzbot` deb yozing - inline rejimda ishlayman.")
+                          "🔹 Har qanday guruh yoki chatda `@Lingouzbot` deb yozing - inline rejimda ishlayman.")
 
 @bot.message_handler(func=lambda m: True)
 def main_translator(message):
+    # Bu yerda ham foydalangan odamni bazaga qo'shadi
     add_user(message.from_user.id)
     try:
         detection = translator.detect(message.text)
