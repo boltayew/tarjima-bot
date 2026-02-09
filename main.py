@@ -8,7 +8,7 @@ ADMIN_ID = 7066979613
 bot = telebot.TeleBot(TOKEN)
 translator = Translator()
 
-# --- BAZA BILAN ISHLASH ---
+# --- BAZA ---
 def db_init():
     conn = sqlite3.connect('users.db', check_same_thread=False)
     cursor = conn.cursor()
@@ -25,7 +25,7 @@ def add_user(user_id, name):
 
 db_init()
 
-# --- 1. ADMIN BUYRUQLARI (TEPADA TURISHI SHART) ---
+# --- 1. ADMIN BUYRUQLARI (Tepada bo'lishi shart!) ---
 
 @bot.message_handler(commands=['users'])
 def get_stats(message):
@@ -40,7 +40,7 @@ def get_stats(message):
 @bot.message_handler(commands=['send'])
 def send_ads(message):
     if message.from_user.id == ADMIN_ID:
-        msg = bot.send_message(ADMIN_ID, "Hamma foydalanuvchilarga yubormoqchi bo'lgan xabaringizni yozing:")
+        msg = bot.send_message(ADMIN_ID, "Xabarni yozing:")
         bot.register_next_step_handler(msg, start_broadcasting)
 
 def start_broadcasting(message):
@@ -49,15 +49,10 @@ def start_broadcasting(message):
     cursor.execute('SELECT user_id FROM users')
     users = cursor.fetchall()
     conn.close()
-    
-    success = 0
     for user in users:
-        try:
-            bot.copy_message(user[0], message.chat.id, message.message_id)
-            success += 1
-        except:
-            continue
-    bot.send_message(ADMIN_ID, f"✅ Xabar {success} ta foydalanuvchiga yuborildi.")
+        try: bot.copy_message(user[0], message.chat.id, message.message_id)
+        except: continue
+    bot.send_message(ADMIN_ID, "✅ Yuborildi.")
 
 # --- 2. START BUYRUQ ---
 
@@ -65,23 +60,19 @@ def start_broadcasting(message):
 def welcome(message):
     name = message.from_user.first_name
     add_user(message.from_user.id, name)
-    bot.reply_to(message, f"Salom, **{name}**! 👋\n\nMenga matn yuboring, men uni O'zbek tiliga tarjima qilaman. 🇺🇿", parse_mode='Markdown')
+    bot.reply_to(message, f"Salom, **{name}**! 👋\n\nMen tarjimon botman. Matn yuboring.", parse_mode='Markdown')
 
-# --- 3. TARJIMON QISMI (ENG PASTDA TURISHI SHART) ---
+# --- 3. TARJIMON (Eng pastda bo'lishi shart!) ---
 
 @bot.message_handler(func=lambda m: True)
 def main_translator(message):
     add_user(message.from_user.id, message.from_user.first_name)
     try:
         detection = translator.detect(message.text)
-        src_lang = detection.lang
-        target = 'uz' if src_lang != 'uz' else 'en'
-        
+        target = 'uz' if detection.lang != 'uz' else 'en'
         translated = translator.translate(message.text, dest=target)
-        
-        response = f"🔍 **Asl tili:** {src_lang.upper()}\n📝 **Tarjima:** {translated.text}"
-        bot.reply_to(message, response, parse_mode='Markdown')
+        bot.reply_to(message, f"🔍 Asl tili: {detection.lang.upper()}\n📝 Tarjima: {translated.text}")
     except:
-        bot.reply_to(message, "Xatolik yuz berdi. Qayta urinib ko'ring.")
+        bot.reply_to(message, "Xato.")
 
 bot.polling(none_stop=True)
