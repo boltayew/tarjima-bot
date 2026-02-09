@@ -3,7 +3,7 @@ import sqlite3
 from googletrans import Translator
 
 # --- SOZLAMALAR ---
-TOKEN = '8525442823:AAHsrhnEMVOjMXteIJai:--szLFLuU7JfHE' # Tokeningizni tekshirib oling
+TOKEN = '88525442823:AAHsrhnEMVOjMXteIJaiy--szLFLuU7JfHE' # Tokeningizni tekshirib oling
 ADMIN_ID = 7066979613
 bot = telebot.TeleBot(TOKEN)
 translator = Translator()
