@@ -57,7 +57,6 @@ def inline_translation(inline_query):
         
         lang_full = LANGUAGES_DICT.get(detected_lang, detected_lang.upper())
         
-        # Markdown formatini to'g'ri qo'llash
         result = types.InlineQueryResultArticle(
             id='1',
             title=f"Tarjima: {lang_full} -> {target.upper()}",
@@ -75,9 +74,7 @@ def inline_translation(inline_query):
 @bot.message_handler(commands=['start'])
 def welcome(message):
     add_user(message.from_user.id)
-    bot.reply_to(message, "Salom! Men Lingo uz tarjimon botiman.\n\n"
-                          "🔹 Matn yuboring - tarjima qilaman.\n"
-                          "🔹 Inline rejimda ishlayman.")
+    bot.reply_to(message, "Salom! Men Lingo uz tarjimon botiman.\n\n🔹 Matn yuboring - tarjima qilaman.\n🔹 Inline rejimda ishlayman.")
 
 @bot.message_handler(func=lambda m: True)
 def main_translator(message):
@@ -86,4 +83,13 @@ def main_translator(message):
         detection = translator.detect(message.text)
         detected_lang_code = detection.lang
         lang_name = LANGUAGES_DICT.get(detected_lang_code, detected_lang_code.upper())
-        target_lang = 'uz' if detected_lang_code !=
+        
+        # MANA SHU QATORNI TO'G'IRLADIK:
+        target_lang = 'uz' if detected_lang_code != 'uz' else 'en'
+        
+        translated = translator.translate(message.text, dest=target_lang)
+        bot.reply_to(message, f"🔍 *Asl tili:* {lang_name}\n📝 *Tarjima:* {translated.text}", parse_mode='Markdown')
+    except:
+        bot.reply_to(message, "Xatolik yuz berdi. Qaytadan urinib ko'ring.")
+
+bot.polling(none_stop=True)
